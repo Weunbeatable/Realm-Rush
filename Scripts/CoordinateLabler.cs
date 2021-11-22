@@ -10,17 +10,21 @@ public class CoordinateLabler : MonoBehaviour
 {
     //use the access of is placeable to change coordinate colour
     [SerializeField] Color defaultColor = Color.white;
-    [SerializeField] Color blockColor = Color.clear;
+    [SerializeField] Color blockColor = Color.blue;
+    [SerializeField] Color exploredColor = Color.yellow;
+    [SerializeField] Color pathColor = new Color(1f, 0.5f, 0f); // orange color isn't default so we create  it using rgb values.
     //**********************************************************
     TextMeshPro label;
     Vector2Int coordinates = new Vector2Int();
-    waypoint waypoint; // access to our waypoints
+    Tile waypoint; // access to our waypoints
+    GridManager gridManager;
 
     private void Awake()
     {
+        gridManager = FindObjectOfType<GridManager>();
         label = GetComponent<TextMeshPro>();
         label.enabled = false;
-        waypoint = GetComponentInParent<waypoint>(); // we get component in parent because the waypoint is on the root of our object and the coordinate is on the root of the children.
+        waypoint = GetComponentInParent<Tile>(); // we get component in parent because the waypoint is on the root of our object and the coordinate is on the root of the children.
         DisplayCoordinaties();
     }
 
@@ -31,6 +35,7 @@ public class CoordinateLabler : MonoBehaviour
         {
             DisplayCoordinaties();
             UpdateObjectName();
+            label.enabled = true;
             //do something
         }
         SetLabelColor();
@@ -45,20 +50,38 @@ public class CoordinateLabler : MonoBehaviour
         }
        
     }
-    private void SetLabelColor()
+     void SetLabelColor()
     {
-        if (waypoint.IsPlaceable)
+        if (gridManager == null) { return; }
+
+        Node node = gridManager.GetNode(coordinates); // if this turns out to be null our if is broken
+
+        if (node == null) { return; }
+
+        if (!node.isWalkable)
+        {
+            label.color = blockColor;
+        }
+        else if (node.isPath)
+        {
+            label.color = pathColor;
+        }
+        else if (node.isExplored)
+        {
+            label.color = exploredColor;
+        }
+        else
         {
             label.color = defaultColor;
         }
-        else
-            label.color = blockColor;
+    
     }
 
     void DisplayCoordinaties()
     {
-        coordinates.x = Mathf.RoundToInt(transform.parent.position.x / UnityEditor.EditorSnapSettings.move.x);
-        coordinates.y = Mathf.RoundToInt(transform.parent.position.z / UnityEditor.EditorSnapSettings.move.z);
+        if(gridManager == null) { return; }
+        coordinates.x = Mathf.RoundToInt(transform.parent.position.x / gridManager.UnityGridSize);
+        coordinates.y = Mathf.RoundToInt(transform.parent.position.z / gridManager.UnityGridSize);
 
         label.text = coordinates.x + "," + coordinates.y;
     }
